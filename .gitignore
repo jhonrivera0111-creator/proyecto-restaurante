@@ -1,0 +1,27 @@
+# Secretos — nunca subir a git
+.env
+
+# Base de datos local
+/DataBase
+Backend/DataBase/
+Backend/Backups/
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code — archivos internos del tool
+.agents/
+.claude/
+skills-lock.json
+docs/superpowers/
+
+# Tests
+Frontend/coverage/

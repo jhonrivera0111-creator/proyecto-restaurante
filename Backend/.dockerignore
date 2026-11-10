@@ -1,0 +1,7 @@
+target/
+DataBase/
+*.log
+.mvn/wrapper/maven-wrapper.jar
+.git/
+.gitignore
+*.md

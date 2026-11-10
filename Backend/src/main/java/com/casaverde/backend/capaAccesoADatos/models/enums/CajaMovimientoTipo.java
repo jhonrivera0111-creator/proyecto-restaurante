@@ -1,0 +1,18 @@
+package com.casaverde.backend.capaAccesoADatos.models.enums;
+
+public enum CajaMovimientoTipo {
+    COBRO_PEDIDO,
+    REVERSO_PAGO,
+    GASTO,
+    REVERSO_GASTO,
+    AJUSTE_FONDO,
+    ENTRADA_MANUAL,
+    TRANSFERENCIA_SALIDA,
+    TRANSFERENCIA_ENTRADA,
+    COMPRA_PAGO,
+    ADELANTO_EMPLEADO,
+    PAGO_EMPLEADO,
+    ADELANTO_PROVEEDOR,
+    APLICACION_ADELANTO_PROVEEDOR,
+    COBRO_CUENTA_COBRAR
+}

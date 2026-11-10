@@ -1,0 +1,24 @@
+{
+  "properties": [
+    {
+      "name": "app.datasource.path",
+      "type": "java.lang.String",
+      "description": "Ruta del archivo SQLite local usado como base de datos operativa."
+    },
+    {
+      "name": "app.backup.dir",
+      "type": "java.lang.String",
+      "description": "Directorio donde se guardan los backups SQLite generados por el sistema."
+    },
+    {
+      "name": "app.admin.default-password",
+      "type": "java.lang.String",
+      "description": "Password inicial del usuario administrador cuando se crean usuarios semilla."
+    },
+    {
+      "name": "cors.allowed-origins",
+      "type": "java.util.List<java.lang.String>",
+      "description": "Orígenes permitidos para CORS en desarrollo local, nginx y Electron."
+    }
+  ]
+}
