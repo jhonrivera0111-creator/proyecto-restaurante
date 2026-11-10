@@ -141,9 +141,9 @@ Abrir **<http://localhost:5173>** en el navegador.
 
 ### 4. Iniciar sesión
 
-| Usuario | Contraseña |
-|---|---|
-| ADMIN | `admin123` |
+| Usuario | Rol | Contraseña |
+|---|---|---|
+| Administrador | ADMIN | `admin123` |
 
 Los usuarios con rol OPERADOR se crean desde **Configuración → Usuarios** y no requieren contraseña.
 
@@ -164,7 +164,7 @@ docker compose up --build
 
 - App: <http://localhost> (nginx sirve el frontend y redirige `/api` al backend)
 - API: <http://localhost:5020>
-- Usuario: ADMIN con la contraseña definida en `APP_ADMIN_PASSWORD` del archivo `.env`.
+- Usuario: Administrador con la contraseña definida en `APP_ADMIN_PASSWORD` del archivo `.env`.
 
 Los datos se guardan en volúmenes de Docker (`casaverde_db`, `casaverde_backups`). Para borrarlos: `docker compose down -v`.
 
