@@ -14,6 +14,12 @@ Sistema de escritorio para la operación diaria de un asadero/restaurante: toma 
 
 ---
 
+## Equipo
+
+Jhon Rivera · Carlos Caicedo · Yonatan Buitron · Lenny Chilito — aportes de cada uno en [docs/APORTES_DEL_EQUIPO.md](docs/APORTES_DEL_EQUIPO.md).
+
+---
+
 ## Tabla de contenido
 
 1. [Tecnologías](#tecnologías)

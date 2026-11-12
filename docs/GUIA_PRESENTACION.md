@@ -92,12 +92,12 @@ Cada quien debe poder contestar **todo**, pero conviene que cada uno lidere una 
 
 | Persona | Lidera |
 |---|---|
-| 1 | Contexto + arquitectura (diapositivas 1–2) |
-| 2 | Estrategia de pruebas + demo de ArchUnit (4–5) |
-| 3 | Comportamiento del sistema + reglas de negocio (6) |
-| 4 | Hallazgos, acciones futuras, repositorio y manual (7–9) |
+| Jhon Rivera | Contexto + arquitectura (diapositivas 1–3) |
+| Lenny Chilito | Estrategia de pruebas + demo de ArchUnit y seguridad (4–5) |
+| Carlos Caicedo | Comportamiento del sistema: recorrido de un pedido, caja e inventario (6) |
+| Yonatan Buitron | Hallazgos, acciones futuras, frontend y cierre (7–9) |
 
-(Adapta al número real de integrantes.)
+(Coincide con [APORTES_DEL_EQUIPO.md](APORTES_DEL_EQUIPO.md).)
 
 ---
 
