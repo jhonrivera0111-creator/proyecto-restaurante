@@ -18,13 +18,23 @@ import com.casaverde.backend.fachadaServices.services.inventarioService.IInventa
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Efectos "pesados" de finalizar un pedido: tocar inventario y caja.
+ * Se separó de PedidoServiceImpl para que esa clase no crezca más y porque hay
+ * tres variantes (normal, fiado, saldar fiado).
+ *
+ * Propagation.MANDATORY: estos métodos NO pueden ejecutarse solos; exigen que
+ * ya exista una transacción abierta (la de PedidoServiceImpl). Así inventario
+ * y caja se confirman o se deshacen JUNTOS con el pedido.
+ */
 @Service
 @RequiredArgsConstructor
 public class PedidoFinalizacionServiceImpl implements IPedidoFinalizacionService {
 
-    private final IInventarioService inventarioService;
-    private final ICajaMovimientoService cajaMovimientoService;
+    private final IInventarioService inventarioService;       // descuenta/repone insumos
+    private final ICajaMovimientoService cajaMovimientoService; // escribe el libro de caja
 
+    /** Finalización normal: descuenta inventario Y acredita la caja. */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void ejecutar(Pedido pedido, BigDecimal totalCop) {
@@ -32,18 +42,21 @@ public class PedidoFinalizacionServiceImpl implements IPedidoFinalizacionService
         registrarCobroFinal(pedido, totalCop);
     }
 
+    /** Saldar un fiado: el inventario ya se descontó al fiar, solo falta acreditar la caja. */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void ejecutarSoloCobro(Pedido pedido, BigDecimal totalCop) {
         registrarCobroFinal(pedido, totalCop);
     }
 
+    /** Al fiar: se sirve la comida (baja inventario) pero todavía no entra dinero a caja. */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void ejecutarSoloInventario(Pedido pedido) {
         inventarioService.descontarPorPedido(pedido);
     }
 
+    /** Al anular un fiado: se devuelve al inventario lo que se había descontado. */
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void revertirInventario(Pedido pedido) {
@@ -55,6 +68,7 @@ public class PedidoFinalizacionServiceImpl implements IPedidoFinalizacionService
      * Solo ingresa el valor del pedido (totalCop); el cambio nunca toca el fondo.
      */
     private void registrarCobroFinal(Pedido pedido, BigDecimal totalCop) {
+        // Paso 1: agrupar los pagos por moneda -> [suma en moneda original, suma en COP]
         Map<String, BigDecimal[]> porMoneda = new LinkedHashMap<>();
         for (Pago p : pedido.getPagos()) {
             porMoneda.compute(p.getMoneda(), (k, arr) -> {
@@ -65,6 +79,8 @@ public class PedidoFinalizacionServiceImpl implements IPedidoFinalizacionService
             });
         }
 
+        // Paso 2: acreditar cada fondo hasta cubrir el total del pedido. Si el cliente
+        // pagó de más (vueltas), el excedente NO entra a caja: "restante" llega a 0 y se corta.
         BigDecimal restante = totalCop;
         for (Map.Entry<String, BigDecimal[]> e : porMoneda.entrySet()) {
             if (restante.compareTo(BigDecimal.ZERO) <= 0) break;

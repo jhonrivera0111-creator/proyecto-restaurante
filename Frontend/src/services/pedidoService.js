@@ -1,5 +1,9 @@
 import api from "./api";
 
+// Cliente de la API de pedidos: una función por endpoint de PedidoController.
+// Cada una llama al backend con Axios y devuelve directamente el JSON (r.data).
+// No contiene lógica: las pantallas las usan a través de React Query
+// (useQuery para leer, useMutation para escribir; ver hooks/usePedidoMutations.js).
 export const pedidoService = {
   listar: (todos = false) =>
     api.get("/pedidos", { params: { todos } }).then((r) => r.data),

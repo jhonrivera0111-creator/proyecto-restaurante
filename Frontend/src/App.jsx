@@ -12,6 +12,15 @@ import FondosPage from "./pages/fondos/FondosPage";
 import EmpleadosPage from "./pages/empleados/EmpleadosPage";
 import CuentasCobrarPage from "./pages/cuentas-cobrar/CuentasCobrarPage";
 
+// ---------------------------------------------------------------------------
+// App.jsx — raíz de la aplicación React.
+//  1) QueryClient: caché de TanStack Query. staleTime 30 s = los datos se
+//     consideran "frescos" 30 s antes de volver a pedirlos; retry 1 = un reintento.
+//  2) routes: tabla de pantallas. AppLayout es el "marco" (sidebar + topbar + login);
+//     cada pantalla se pinta dentro de él (children).
+//  3) Router: en el navegador usa URLs normales; en Electron (archivo local) usa
+//     "#/ruta" porque file:// no soporta rutas limpias.
+// ---------------------------------------------------------------------------
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
 });

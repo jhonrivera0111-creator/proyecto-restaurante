@@ -14,6 +14,15 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
 
+/**
+ * ENTIDAD JPA = una fila de la tabla "pedido" en SQLite.
+ * Un pedido tiene muchos detalles (los productos) y muchos pagos.
+ * Los totales (total, abonado, saldo) NO se guardan: se calculan al vuelo
+ * (ver PedidoTotales) para que nunca queden desincronizados.
+ *
+ * Anotaciones Lombok: @Getter/@Setter generan los accesores, @Builder permite
+ * Pedido.builder()...build(), @NoArgsConstructor lo exige JPA.
+ */
 @Entity
 @Table(name = "pedido", indexes = {
         @Index(name = "idx_pedido_estado_creado", columnList = "estado, creado_en"),
@@ -31,6 +40,7 @@ public class Pedido {
     @Column(columnDefinition = "integer")
     private Long id;
 
+    /** Bloqueo optimista: si dos usuarios editan el mismo pedido a la vez, el segundo guardado falla en vez de pisar al primero. */
     @Version
     private Long version;
 
@@ -66,6 +76,7 @@ public class Pedido {
     @Column(length = 30)
     private String telefono;
 
+    /** Descuento en pesos aplicado a todo el pedido (no cambia el precio histórico de cada ítem). */
     @Column(name = "descuento_cop", nullable = false, precision = 19, scale = 0)
     @Builder.Default
     private BigDecimal descuentoCop = BigDecimal.ZERO;
@@ -85,6 +96,7 @@ public class Pedido {
     @Column(name = "fiado_en")
     private LocalDateTime fiadoEn;
 
+    // cascade ALL + orphanRemoval: guardar/borrar el pedido guarda/borra sus líneas y pagos automáticamente.
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     @BatchSize(size = 50)
     @Builder.Default
@@ -95,6 +107,7 @@ public class Pedido {
     @Builder.Default
     private List<Pago> pagos = new ArrayList<>();
 
+    /** Se ejecuta justo antes del INSERT: sella fechas en hora de Bogotá y estado inicial. */
     @PrePersist
     void onCreate() {
         creadoEn = LocalDateTime.now(ZoneId.of("America/Bogota"));
@@ -103,6 +116,7 @@ public class Pedido {
             estado = EstadoPedido.PENDIENTE;
     }
 
+    /** Se ejecuta antes de cada UPDATE: refresca la fecha de última modificación. */
     @PreUpdate
     void onUpdate() {
         actualizadoEn = LocalDateTime.now(ZoneId.of("America/Bogota"));

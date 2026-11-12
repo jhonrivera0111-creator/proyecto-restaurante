@@ -25,14 +25,17 @@ public record PedidoTotales(
      * histórico de cada detalle — se resta solo a nivel de pedido.
      */
     public static PedidoTotales of(Pedido pedido) {
+        // subtotal = suma(precio unitario x cantidad) de cada línea
         BigDecimal subtotal = pedido.getDetalles().stream()
                 .map(d -> d.getPrecioUnitarioCop().multiply(BigDecimal.valueOf(d.getCantidad())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal descuento = pedido.getDescuentoCop() != null ? pedido.getDescuentoCop() : BigDecimal.ZERO;
         BigDecimal total = subtotal.subtract(descuento);
+        // abonado = suma de los pagos ya convertidos a COP (los USD usan la tasa guardada en cada pago)
         BigDecimal abonado = pedido.getPagos().stream()
                 .map(Pago::getMontoCop)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // saldoPendiente = lo que falta por pagar; valorCambio = vueltas si pagó de más (nunca negativos)
         return new PedidoTotales(
                 subtotal,
                 total,

@@ -1,3 +1,9 @@
+// ---------------------------------------------------------------------------
+// utils/format.js — funciones de PRESENTACIÓN (dinero y fechas en formato colombiano).
+// Regla del proyecto: nunca formatear dinero a mano con toLocaleString; usar
+// formatCOP / formatUSD de este archivo para que todo se vea igual.
+// ---------------------------------------------------------------------------
+
 // Lee la zona horaria real del OS vía Intl (funciona incluso en Electron renderer)
 const sysTZ = () => {
   try { return Intl.DateTimeFormat().resolvedOptions().timeZone; }

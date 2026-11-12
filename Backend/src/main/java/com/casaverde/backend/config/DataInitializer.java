@@ -38,6 +38,13 @@ import com.casaverde.backend.fachadaServices.services.productoService.IUsuarioSe
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Se ejecuta UNA VEZ cada vez que arranca el backend (CommandLineRunner).
+ * Siembra los datos iniciales si la base está vacía: categorías, productos con
+ * su receta de inventario, fondos COP/USD/NEQUI, tasa USD (4200), inventario en
+ * cero y el usuario ADMIN. También corrige ("backfill") datos de versiones
+ * anteriores. Es idempotente: si ya existen los datos, no los duplica.
+ */
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
