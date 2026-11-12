@@ -16,6 +16,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * SEGURIDAD de la API (Spring Security).
+ *  - Sin sesión de servidor (STATELESS): cada petición trae su token en la
+ *    cabecera "Authorization: Bearer ..." y TokenAuthenticationFilter lo valida.
+ *  - Públicas: login, listado de usuarios (para la pantalla de ingreso), health y Swagger.
+ *  - Solo ADMIN: usuarios, configuración y backups.
+ *  - Todo lo demás de /api/v1 exige estar autenticado; el resto se deniega.
+ *  - Si app.security.enabled=false (solo pruebas) se permite todo.
+ */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -26,6 +35,7 @@ public class SecurityConfig {
     @Value("${app.security.enabled:false}")
     private boolean securityEnabled;
 
+    /** BCrypt: cifrado de contraseñas de un solo sentido (nunca se guardan en texto plano). */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

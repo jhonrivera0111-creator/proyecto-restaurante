@@ -16,6 +16,15 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/**
+ * MANEJADOR GLOBAL DE ERRORES.
+ * Cualquier excepción que se lance en un servicio llega aquí y se convierte en
+ * una respuesta JSON uniforme {timestamp, status, error, mensaje}, con el
+ * código HTTP correcto. Así el frontend siempre puede mostrar "mensaje".
+ *   RecursoNoEncontrado -> 404 | ValidacionException (regla de negocio) -> 400
+ *   Optimistic lock (dos usuarios a la vez) -> 409 | Integridad de BD -> 409
+ *   Cualquier otra -> 500 (se registra en el log y no se filtran detalles al cliente)
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

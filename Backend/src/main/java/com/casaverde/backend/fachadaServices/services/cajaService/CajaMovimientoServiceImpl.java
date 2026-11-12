@@ -17,6 +17,13 @@ import com.casaverde.backend.fachadaServices.services.configuracionService.ITasa
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * LIBRO DE CAJA: único punto por el que cambia el saldo de un fondo.
+ * Todo ingreso o egreso de dinero (cobro de pedido, gasto, compra, nómina,
+ * transferencia, ajuste...) pasa por registrar(). Así cada cambio de saldo
+ * deja una fila inmutable en CajaMovimiento con el saldo resultante y su
+ * origen (referenciaTipo + referenciaId): se puede reconstruir cualquier saldo.
+ */
 @Service
 @RequiredArgsConstructor
 public class CajaMovimientoServiceImpl implements ICajaMovimientoService {
@@ -26,6 +33,13 @@ public class CajaMovimientoServiceImpl implements ICajaMovimientoService {
         private final ITasaCambioService tasaCambioService;
         private final IMonetaryService monetaryService;
 
+        /**
+         * Aplica un movimiento a un fondo. monto > 0 = entra dinero, monto < 0 = sale.
+         * Reglas: no acepta movimientos de 0; un egreso NO puede dejar el fondo en
+         * negativo (se rechaza con ValidacionException); guarda el saldo resultante.
+         * MANDATORY: exige estar dentro de la transacción de quien lo llama, para
+         * que el pedido/gasto y su asiento de caja se confirmen o fallen juntos.
+         */
         @Transactional(propagation = Propagation.MANDATORY)
         public CajaMovimiento registrar(
                         CajaMovimientoTipo tipo,

@@ -28,6 +28,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * CONTROLADOR REST de pedidos (capa de presentación).
+ * Su única tarea: recibir la petición HTTP, validar el formato del JSON
+ * (@Valid) y delegar en IPedidoService. NO tiene lógica de negocio; una
+ * prueba de arquitectura (ArchUnit) verifica que no salte hacia los repositorios.
+ *
+ * Anotaciones: @RestController = devuelve JSON; @RequestMapping = prefijo de
+ * URL; @GetMapping/@PostMapping/@PutMapping/@PatchMapping/@DeleteMapping =
+ * verbo HTTP; @PathVariable = valor dentro de la URL ({id}); @RequestBody =
+ * JSON del cuerpo; @Operation/@Tag = texto para la documentación Swagger.
+ */
 @RestController
 @RequestMapping("/api/v1/pedidos")
 @RequiredArgsConstructor

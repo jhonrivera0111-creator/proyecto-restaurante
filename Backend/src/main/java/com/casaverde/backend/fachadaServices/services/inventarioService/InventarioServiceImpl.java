@@ -143,6 +143,12 @@ public class InventarioServiceImpl implements IInventarioService {
 
     @Override
     @org.springframework.transaction.annotation.Transactional
+    /**
+     * Descuenta del stock los insumos que consume un pedido (se llama al
+     * finalizar o al fiar). Primero suma lo que necesita cada insumo, luego
+     * VALIDA que alcance el stock (si no, lanza error y no se descuenta nada)
+     * y por último registra una salida en el historial de movimientos.
+     */
     public void descontarPorPedido(Pedido pedido) {
         log.info("[descontar] pedidoId={} detalles={}", pedido.getId(), pedido.getDetalles().size());
         Map<String, BigDecimal> consumos = calcularConsumos(pedido);
@@ -154,6 +160,7 @@ public class InventarioServiceImpl implements IInventarioService {
 
     @Override
     @org.springframework.transaction.annotation.Transactional
+    /** Devuelve al stock lo descontado (solo al anular un pedido fiado); deja un movimiento de entrada como rastro. */
     public void revertirPorPedido(Pedido pedido) {
         log.info("[revertir] pedidoId={} detalles={}", pedido.getId(), pedido.getDetalles().size());
         Map<String, BigDecimal> consumos = calcularConsumos(pedido);
@@ -181,6 +188,12 @@ public class InventarioServiceImpl implements IInventarioService {
     }
 
     @Override
+    /**
+     * Cuánto de cada insumo consume el pedido. Lee la receta guardada en cada
+     * línea (composicionSnapshot, JSON) y multiplica por la cantidad vendida.
+     * Ej.: 2 x "1/2 Gallina" (0.5 gallina c/u) => gallina: 1.0.
+     * Las líneas sin receta (gaseosa, arroz...) se ignoran: no afectan inventario.
+     */
     public Map<String, BigDecimal> calcularConsumos(Pedido pedido) {
         Map<String, BigDecimal> consumos = new LinkedHashMap<>();
         for (PedidoDetalle detalle : pedido.getDetalles()) {
