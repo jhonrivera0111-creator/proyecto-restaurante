@@ -25,7 +25,7 @@ La prioridad no es una demo visual; la prioridad es un sistema operable de verda
 | Base de datos | SQLite (local) |
 | Mapeo DTO | MapStruct 1.6.3 |
 | Boilerplate | Lombok (`@RequiredArgsConstructor`, `@Builder`, `@Data`, etc.) |
-| Seguridad / hashing | Spring Security Crypto (BCrypt para contraseñas) |
+| Seguridad / hashing | Spring Security (filtro de token propio firmado HMAC-SHA256, roles ADMIN/OPERADOR) + BCrypt para contraseñas |
 | Puerto local | `5020` |
 
 ### Frontend
@@ -226,7 +226,7 @@ Casa-Verde/
 ### Sesión — `/api/v1/sesion`
 | Método | Ruta | Descripción |
 |---|---|---|
-| POST | `/login` | Login (`{usuarioId, password}`) — devuelve UsuarioDTO o 401 |
+| POST | `/login` | Login (`{usuarioId, password}`) — devuelve UsuarioDTO con `token`; clave incorrecta → 400 |
 
 ### Auditoría — `/api/v1/auditoria`
 | Método | Ruta | Descripción |
@@ -591,7 +591,7 @@ src/
 - `AppLayout` verifica `useSessionStore.usuario`. Si es `null`, muestra `LoginScreen`.
 - `LoginScreen` llama a `GET /api/v1/usuarios` para listar usuarios activos, luego `POST /api/v1/sesion/login`.
 - La sesión vive **solo en memoria Zustand** (no se persiste en localStorage). Al recargar la página se pide login de nuevo.
-- Los endpoints del backend **no están protegidos** — no hay Spring Security ni JWT. El login es un control UI solamente.
+- Los endpoints **sí están protegidos** (`SecurityConfig`, `app.security.enabled=true`): el login devuelve un token firmado (12 h) que `api.js` envía como `Authorization: Bearer ...`. Públicos: login, `GET /usuarios`, `/actuator/health`, Swagger. Solo ADMIN: `/usuarios/**`, `/configuracion/**`, `/backups/**`. Cubierto por `SeguridadEndpointsTest`.
 - El usuario ADMIN requiere password; el OPERADOR no.
 
 ### Design system (CSS — `index.css`)
