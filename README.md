@@ -131,7 +131,6 @@ mvnw.cmd spring-boot:run
 ./mvnw spring-boot:run
 ```
 
-> **Windows con espacios en la ruta del usuario** (p. ej. `C:\Users\Nombre Apellido`): `mvnw.cmd` falla con *"C:\Users\Nombre" no se reconoce como un comando*. Ver [Problemas frecuentes](#problemas-frecuentes).
 
 La primera vez descarga Maven y las dependencias (varios minutos). Está listo cuando la consola muestra:
 
@@ -184,6 +183,7 @@ Los datos se guardan en volúmenes de Docker (`casaverde_db`, `casaverde_backups
 
 Recorrido de ~10 minutos que ejercita el flujo principal (pedido → cobro → caja → inventario → cierre):
 
+0. **Poner precios (obligatorio la primera vez).** El catálogo inicial se crea con **precio $0** a propósito (cada negocio define los suyos), y un pedido de $0 no se puede cobrar ni finalizar. En *Configuración → Productos* hacer clic sobre el precio ($0) de **"1/2 Gallina"** y de **"Gaseosa"** y asignar, por ejemplo, 28.000 y 4.000.
 1. **Cargar inventario.** *Inventario → Proveedores → Nuevo proveedor*. Luego *Inventario → Compras → Registrar compra*: comprar, por ejemplo, 5 gallinas y 5 cuyes. El stock sube en la pestaña *Stock*.
 2. **Crear un pedido.** *Pedidos → Nuevo Pedido*: agregar "1/2 Gallina" y "Gaseosa". El total lo calcula el backend.
 3. **Cobrar.** Abrir el pedido → *Cobrar*: registrar un pago parcial en COP y el resto en NEQUI. El estado pasa de `PENDIENTE` → `ABONADO_PARCIAL` → `PAGADO`.
@@ -263,7 +263,9 @@ Resultado esperado: `Test Files 7 passed`, `Tests 118 passed`. Cubren utilidades
 |---|---|
 | `npm error enoent Could not read package.json` | `npm` se ejecutó fuera de `Frontend/`. Hacer `cd Frontend` primero. El backend **no** usa npm. |
 | `'mvn' no se reconoce como comando` | Usar el wrapper incluido: `mvnw.cmd` (Windows) o `./mvnw`. |
-| `"C:\Users\Nombre" no se reconoce como un comando...` / `Cannot start maven from wrapper` | El wrapper de Windows falla cuando la carpeta del usuario tiene espacios. Ejecutar `mvnw.cmd` una vez descarga Maven en `%USERPROFILE%\.m2\wrapper\dists\apache-maven-3.9.9\<hash>\`; luego usar ese Maven directamente, p. ej. en PowerShell: `& "$env:USERPROFILE\.m2\wrapper\dists\apache-maven-3.9.9\<hash>\bin\mvn.cmd" spring-boot:run` (o `test`). También funciona `./mvnw` desde Git Bash. |
+| `"C:\Users\Nombre" no se reconoce como un comando...` / `Cannot start maven from wrapper` | Ocurría con el wrapper 3.3.2 original cuando la carpeta del usuario de Windows tiene espacios; **ya está corregido** en `Backend/mvnw.cmd` de este repositorio. Si se usa una copia antigua, actualizar el repo (`git pull`) o usar `./mvnw` desde Git Bash. |
+| El pedido queda en `PENDIENTE` aunque se pague / no deja finalizar | Los productos tienen precio $0. Asignar precios en *Configuración → Productos* (ver paso 0 del recorrido guiado). |
+| `./mvnw: Permission denied` (Linux / macOS) | `chmod +x Backend/mvnw` (en el repo ya tiene permiso de ejecución). |
 | `Port 5020 was already in use` / `Port 5173 is already in use` | Otra instancia sigue corriendo (o el contenedor Docker). Cerrarla o `docker compose down`. |
 | La app abre pero muestra "Error de conexión" o no lista usuarios | El backend no está corriendo o aún no termina de arrancar. |
 | `invalid target release: 17` | La variable `JAVA_HOME` apunta a una versión de Java distinta de la 17. |

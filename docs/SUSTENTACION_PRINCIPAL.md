@@ -126,9 +126,9 @@ Se usan **dos terminales separadas**, en este orden: primero el frontend y despu
 npm run dev
 ```
 
-**Terminal 2 — Backend** (en `Backend/`). `mvnw.cmd` falla si la ruta del usuario tiene espacios, así que se usa el Maven ya descargado:
+**Terminal 2 — Backend** (en `Backend/`; el `mvnw.cmd` del repo ya funciona aunque el usuario de Windows tenga espacios):
 ```
-& 'C:\Users\Lenny Chilito Lozada\.m2\wrapper\dists\apache-maven-3.9.9\977a63e90f436cd6ade95b4c0e10c20c\bin\mvn.cmd' spring-boot:run
+.\mvnw.cmd spring-boot:run
 ```
 
 Esperar a que el backend muestre `Started CasaVerdeApplication` (o que http://localhost:5020/actuator/health responda `UP`) antes de iniciar sesión.
