@@ -100,6 +100,9 @@ Arquitectura en capas del backend: `Controller → Interfaz de servicio (IXxxSer
 
 ## Ejecución local (recomendada)
 
+> **¿Va a evaluar el proyecto?** Siga la [Guía de ejecución paso a paso](docs/GUIA_DE_EJECUCION.md): cubre requisitos, ejecución local y con Docker, pruebas automáticas y un recorrido guiado.
+
+
 Se necesitan **dos terminales**: una para el backend y otra para el frontend.
 
 ### 1. Clonar el repositorio
@@ -244,6 +247,7 @@ Resultado esperado: `Test Files 7 passed`, `Tests 118 passed`. Cubren utilidades
 
 | Documento | Contenido |
 |---|---|
+| [docs/GUIA_DE_EJECUCION.md](docs/GUIA_DE_EJECUCION.md) | **Guía para el evaluador:** requisitos, ejecución (local y Docker), pruebas y recorrido guiado |
 | [docs/arquitectura.md](docs/arquitectura.md) | Arquitectura, capas, modelo de datos y reglas de negocio |
 | [docs/MANUAL_BUENAS_PRACTICAS.md](docs/MANUAL_BUENAS_PRACTICAS.md) | Convenciones, cómo agregar un módulo y definición de terminado |
 | [docs/INFORME_PRUEBAS.md](docs/INFORME_PRUEBAS.md) | Informe de pruebas para stakeholders |
