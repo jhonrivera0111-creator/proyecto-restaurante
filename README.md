@@ -253,8 +253,6 @@ Resultado esperado: `Test Files 7 passed`, `Tests 118 passed`. Cubren utilidades
 | [docs/INFORME_PRUEBAS.md](docs/INFORME_PRUEBAS.md) | Informe de pruebas para stakeholders |
 | [docs/REGISTRO_DE_CAMBIOS.md](docs/REGISTRO_DE_CAMBIOS.md) | Cambios de la etapa de validación final |
 | [docs/EXPLICACION_DEL_CODIGO.md](docs/EXPLICACION_DEL_CODIGO.md) | Mapa del código: qué hace cada carpeta y archivo, y cómo viaja una operación |
-| [docs/SUSTENTACION_PRINCIPAL.md](docs/SUSTENTACION_PRINCIPAL.md) | Resumen para la sustentación: decisiones de diseño y su justificación |
-| [docs/GUIA_PRESENTACION.md](docs/GUIA_PRESENTACION.md) | Guion de la presentación y de la demostración de pruebas en vivo |
 | [CLAUDE.md](CLAUDE.md) | Referencia técnica completa: contrato de todos los endpoints REST, entidades, convenciones de código y flujo Git |
 | Swagger UI (con el backend corriendo) | <http://localhost:5020/swagger-ui.html> — documentación interactiva de la API |
 | OpenAPI JSON | <http://localhost:5020/v3/api-docs> |
