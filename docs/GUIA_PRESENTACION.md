@@ -45,7 +45,7 @@ Preparar **antes** (ver checklist §5). Tener 2 terminales abiertas y VS Code.
 **Paso A — Las pruebas son reales (2 min)**
 ```bash
 cd Backend
-mvnw.cmd test            # Windows (si falla por espacios en la ruta, usar el mvn.cmd de .m2)
+.\mvnw.cmd test          # Windows (PowerShell)
 ```
 Mostrar al final: `Tests run: 118, Failures: 0, Errors: 0 · BUILD SUCCESS`. Decir: "Son repetibles; el reporte queda en `Backend/target/surefire-reports/`."
 
@@ -58,7 +58,7 @@ Mostrar al final: `Tests run: 118, Failures: 0, Errors: 0 · BUILD SUCCESS`. Dec
 > Mensaje: "Si alguien rompe la arquitectura, el sistema lo detecta antes de que llegue a producción."
 
 **Paso C — Comportamiento (3 min, mínimo)**
-Inventario → registrar compra de gallinas/cuyes → Pedido "1/2 Gallina" → cobrar parte COP + parte NEQUI → **finalizar** → mostrar Fondos (suben) e Inventario (baja 0,5) → Configuración → Auditoría.
+(Si la base es nueva: *Configuración → Productos*, clic en el precio $0 de "1/2 Gallina" y "Gaseosa" y asignar precio.) Inventario → registrar compra de gallinas/cuyes → Pedido "1/2 Gallina" → cobrar parte COP + parte NEQUI → **finalizar** → mostrar Fondos (suben) e Inventario (baja 0,5) → Configuración → Auditoría.
 Frase clave: *"Registrar el pago no mueve la caja; solo al finalizar, y todo en una transacción."*
 
 Si algo falla en vivo: **no improvises**; muestra el reporte ya generado y di con calma qué pasó. Es mejor que ocultarlo.
@@ -82,7 +82,7 @@ Si algo falla en vivo: **no improvises**; muestra el reporte ya generado y di co
 | ¿Usaron IA? | Sí, está permitido; cada uno puede explicar el código (guías: `EXPLICACION_DEL_CODIGO.md`). |
 | ¿Datos personales? | Todos ficticios (verifica nombres y celulares en la BD de demo antes de presentar). |
 
-Documentos de apoyo para estudiar: [SUSTENTACION_PRINCIPAL.md](SUSTENTACION_PRINCIPAL.md), [EXPLICACION_DEL_CODIGO.md](EXPLICACION_DEL_CODIGO.md), [GUIA_SUSTENTACION.md](GUIA_SUSTENTACION.md).
+Documentos de apoyo para estudiar: [SUSTENTACION_PRINCIPAL.md](SUSTENTACION_PRINCIPAL.md), [EXPLICACION_DEL_CODIGO.md](EXPLICACION_DEL_CODIGO.md).
 
 ---
 
@@ -120,11 +120,9 @@ Cada quien debe poder contestar **todo**, pero conviene que cada uno lidere una 
 - [ ] Capturas/reportes de respaldo por si falla la conexión en vivo.
 - [ ] Cierra notificaciones; comparte pantalla completa o ventana específica.
 
-**Si usas Windows con espacios en el usuario**
-`mvnw.cmd` falla ("`C:\Users\Lenny` no se reconoce"). Usa el Maven descargado:
-```
-& 'C:\Users\Lenny Chilito Lozada\.m2\wrapper\dists\apache-maven-3.9.9\977a63e90f436cd6ade95b4c0e10c20c\bin\mvn.cmd' test
-```
+**Windows con espacios en el usuario:** `mvnw.cmd` ya está corregido en el repo; funciona directo (`.\mvnw.cmd test`, `.\mvnw.cmd spring-boot:run`).
+
+**Base de datos nueva:** antes de la demo del pedido, asignar precios en *Configuración → Productos* (el catálogo inicial viene en $0 y un pedido de $0 no se puede finalizar).
 
 ---
 
