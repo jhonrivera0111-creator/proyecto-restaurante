@@ -52,13 +52,38 @@ import com.casaverde.backend.fachadaServices.dto.RegistrarPagoRequest;
 import com.casaverde.backend.fachadaServices.mapper.PedidoMapper;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * ============================================================================
+ * SERVICIO DE PEDIDOS — el corazón del sistema.
+ * ============================================================================
+ * Aquí viven TODAS las reglas de negocio de un pedido: crearlo, editar ítems,
+ * registrar pagos, finalizarlo, fiarlo o anularlo.
+ *
+ * Ciclo de vida del pedido (ver EstadoPedido):
+ *   PENDIENTE -> ABONADO_PARCIAL -> PAGADO -> FINALIZADO
+ *                       \-> FIADO (se sirve sin pagar completo) -> FINALIZADO
+ *   Cualquier estado no finalizado -> ANULADO
+ *
+ * REGLA CLAVE: registrar un pago NO mueve la caja. El dinero entra a los
+ * fondos (y se descuenta el inventario) solo al FINALIZAR. Así, si el pedido
+ * se edita o se anula antes, no hay que "reversar" dinero.
+ *
+ * Patrón de la clase:
+ *  - @Service: Spring la registra como componente y la inyecta donde se pida
+ *    la interfaz IPedidoService (los controladores nunca ven esta clase).
+ *  - @RequiredArgsConstructor (Lombok): genera el constructor con todos los
+ *    campos "final", que es como Spring inyecta las dependencias.
+ *  - @Transactional: cada método es una transacción; si algo falla se deshace
+ *    todo (no queda un pedido a medias).
+ */
 @Service
 @RequiredArgsConstructor
 public class PedidoServiceImpl implements IPedidoService {
 
     private static final Logger log = LoggerFactory.getLogger(PedidoServiceImpl.class);
 
-    private final PedidoRepository pedidoRepo;
+    // --- Dependencias (inyectadas por constructor) ---
+    private final PedidoRepository pedidoRepo;               // acceso a la tabla pedido
     private final ProductoRepository productoRepo;
     private final SalonRepository salonRepo;
     private final CajaMovimientoRepository cajaMovimientoRepo;
@@ -72,38 +97,53 @@ public class PedidoServiceImpl implements IPedidoService {
     private final ObjectMapper objectMapper;
     private final PedidoMapper pedidoMapper;
 
+    /** Lista los pedidos "en curso" (PENDIENTE, ABONADO_PARCIAL, PAGADO), los más recientes primero. */
     @Transactional(readOnly = true)
     public List<PedidoDTO> listarActivos() {
         return pedidoRepo.findByEstadoInOrderByCreadoEnDesc(EstadoPedido.activos())
                 .stream().map(p -> pedidoMapper.toDTO(p, calcularTotales(p))).collect(Collectors.toList());
     }
 
+    /** Lista TODOS los pedidos de cualquier estado (historial completo). */
     @Transactional(readOnly = true)
     public List<PedidoDTO> listarTodos() {
         return pedidoRepo.findAllByOrderByCreadoEnDesc()
                 .stream().map(p -> pedidoMapper.toDTO(p, calcularTotales(p))).collect(Collectors.toList());
     }
 
+    /** Igual que listarTodos pero por páginas, para no cargar miles de pedidos de una vez. */
     @Transactional(readOnly = true)
     public Page<PedidoDTO> listarTodosPaginado(Pageable pageable) {
         return pedidoRepo.findAllByOrderByCreadoEnDesc(pageable)
                 .map(p -> pedidoMapper.toDTO(p, calcularTotales(p)));
     }
 
+    /** Devuelve el detalle de un pedido. Los totales los calcula el backend (nunca el frontend). */
     @Transactional(readOnly = true)
     public PedidoDTO obtener(Long id) {
         Pedido pedido = findOrThrow(id);
         return pedidoMapper.toDTO(pedido, calcularTotales(pedido));
     }
 
+    /** Genera el comprobante imprimible del pedido en texto plano. */
     @Transactional(readOnly = true)
     public String comprobanteTexto(Long id) {
         Pedido pedido = findOrThrow(id);
         return comprobanteService.generar(pedidoMapper.toDTO(pedido, calcularTotales(pedido)));
     }
 
+    /**
+     * Crea un pedido nuevo con sus ítems y, opcionalmente, un descuento y un
+     * abono inicial.
+     * Pasos: (1) valida que una reserva no esté en el pasado, (2) arma el
+     * pedido en estado PENDIENTE, (3) agrega cada ítem copiando nombre/precio/
+     * composición del producto (snapshot), (4) valida el descuento (debe ser
+     * menor al subtotal), (5) registra el abono si lo hay (sin tocar la caja),
+     * (6) recalcula el estado y (7) audita.
+     */
     @Transactional
     public PedidoDTO crear(CrearPedidoRequest req) {
+        // --- 1. Validación de reserva: no se aceptan fechas/horas ya pasadas (hora Bogotá) ---
         boolean tieneFecha = req.getFechaReserva() != null && !req.getFechaReserva().isBlank();
         boolean tieneHora  = req.getHoraReserva()  != null && !req.getHoraReserva().isBlank();
         if (tieneFecha || tieneHora) {
@@ -179,6 +219,11 @@ public class PedidoServiceImpl implements IPedidoService {
         return pedidoMapper.toDTO(guardado, calcularTotales(guardado));
     }
 
+    /**
+     * Edita los datos generales (nombre, mesa, salón, reserva, observación,
+     * descuento). Solo permitido si el pedido aún es editable (no FIADO,
+     * FINALIZADO ni ANULADO). El descuento no puede cambiarse si ya hay pagos.
+     */
     @Transactional
     public PedidoDTO actualizarPedido(Long pedidoId, ActualizarPedidoRequest req) {
         Pedido pedido = findOrThrow(pedidoId);
@@ -238,6 +283,11 @@ public class PedidoServiceImpl implements IPedidoService {
         return pedidoMapper.toDTO(guardado, calcularTotales(guardado));
     }
 
+    /**
+     * Agrega un producto al pedido. Si ese mismo producto ya está en el pedido,
+     * suma la cantidad en vez de duplicar la línea. Recalcula el estado de pago
+     * (agregar algo puede dejar de estar "PAGADO" por el nuevo total).
+     */
     @Transactional
     public PedidoDTO agregarDetalle(Long pedidoId, DetalleItemRequest req) {
         Pedido pedido = findOrThrow(pedidoId);
@@ -258,6 +308,7 @@ public class PedidoServiceImpl implements IPedidoService {
         return pedidoMapper.toDTO(guardado, calcularTotales(guardado));
     }
 
+    /** Quita una línea del pedido (solo si es editable) y recalcula el estado de pago. */
     @Transactional
     public PedidoDTO quitarDetalle(Long pedidoId, Long detalleId) {
         Pedido pedido = findOrThrow(pedidoId);
@@ -273,6 +324,7 @@ public class PedidoServiceImpl implements IPedidoService {
         return pedidoMapper.toDTO(guardado, calcularTotales(guardado));
     }
 
+    /** Cambia la cantidad de una línea. Cantidad 0 equivale a quitarla. */
     @Transactional
     public PedidoDTO actualizarDetalle(Long pedidoId, Long detalleId, ActualizarDetalleRequest req) {
         Pedido pedido = findOrThrow(pedidoId);
@@ -296,6 +348,13 @@ public class PedidoServiceImpl implements IPedidoService {
         return pedidoMapper.toDTO(guardado, calcularTotales(guardado));
     }
 
+    /**
+     * Registra un cobro (COP, USD o NEQUI) sobre el pedido.
+     * Si es USD se convierte a COP con la tasa vigente y se guarda esa tasa
+     * ("tasaUsada") para que el histórico no cambie si la tasa varía después.
+     * IMPORTANTE: NO acredita ningún fondo; solo guarda el pago y recalcula el
+     * estado (PENDIENTE -> ABONADO_PARCIAL -> PAGADO).
+     */
     @Transactional
     public PedidoDTO registrarPago(Long pedidoId, RegistrarPagoRequest req) {
         Pedido pedido = findOrThrow(pedidoId);
@@ -325,6 +384,15 @@ public class PedidoServiceImpl implements IPedidoService {
         return pedidoMapper.toDTO(guardado, calcularTotales(guardado));
     }
 
+    /**
+     * Cierra operativamente el pedido: es el "punto sin retorno".
+     * Exige que esté PAGADO (o que venga de FIADO y ya esté saldado) y que la
+     * hora de una reserva ya haya llegado. Luego, en la MISMA transacción:
+     *   - descuenta el inventario según la composición guardada en cada ítem,
+     *   - acredita los fondos por cada moneda en que se pagó (libro de caja),
+     *   - audita. Si algo falla (p. ej. no hay stock), todo se deshace.
+     * Un pedido que venía de FIADO ya descontó inventario, así que solo cobra.
+     */
     @Transactional
     public PedidoDTO finalizarPedido(Long pedidoId) {
         Pedido pedido = findOrThrow(pedidoId);
@@ -456,6 +524,12 @@ public class PedidoServiceImpl implements IPedidoService {
         return obtener(pedidoId);
     }
 
+    /**
+     * "Fiar" un pedido: el cliente se lleva/consume la comida sin pagar todo.
+     * Descuenta el inventario YA (la comida se sirvió) pero NO toca la caja
+     * (no ha entrado el dinero). El saldo queda como deuda en Cuentas por
+     * Cobrar y el pedido se congela (no se pueden editar ítems), solo recibe abonos.
+     */
     @Transactional
     public PedidoDTO marcarFiado(Long pedidoId) {
         Pedido pedido = findOrThrow(pedidoId);
@@ -484,6 +558,12 @@ public class PedidoServiceImpl implements IPedidoService {
         return pedidoMapper.toDTO(guardado, calcularTotales(guardado));
     }
 
+    /**
+     * Anula un pedido (no se puede si ya está FINALIZADO).
+     * Como los pagos nunca tocaron la caja, no hay dinero que devolver en el
+     * libro; solo se cambia el estado. Si venía de FIADO sí se repone el
+     * inventario que ya se había descontado.
+     */
     @Transactional
     public PedidoDTO anularPedido(Long pedidoId) {
         Pedido pedido = findOrThrow(pedidoId);
@@ -512,6 +592,7 @@ public class PedidoServiceImpl implements IPedidoService {
         return pedidoMapper.toDTO(guardado, calcularTotales(guardado));
     }
 
+    /** Elimina un cobro del pedido (corrección de errores). Sin efecto en caja, porque aún no había entrado. */
     @Transactional
     public PedidoDTO quitarPago(Long pedidoId, Long pagoId) {
         Pedido pedido = findOrThrow(pedidoId);
@@ -531,6 +612,7 @@ public class PedidoServiceImpl implements IPedidoService {
         return pedidoMapper.toDTO(guardado, calcularTotales(guardado));
     }
 
+    /** Edita moneda/monto de un cobro ya registrado y recalcula la conversión a COP. */
     @Transactional
     public PedidoDTO actualizarPago(Long pedidoId, Long pagoId, ActualizarPagoRequest req) {
         Pedido pedido = findOrThrow(pedidoId);
@@ -562,6 +644,7 @@ public class PedidoServiceImpl implements IPedidoService {
 
     // ---- private helpers ----
 
+    /** Busca si el producto (o el ítem manual con mismo nombre y precio) ya está en el pedido, para acumular cantidad. */
     private Optional<PedidoDetalle> buscarDetalleExistente(Pedido pedido, DetalleItemRequest req) {
         if (req.getProductoId() != null) {
             return pedido.getDetalles().stream()
@@ -578,6 +661,12 @@ public class PedidoServiceImpl implements IPedidoService {
                 .findFirst();
     }
 
+    /**
+     * Construye una línea del pedido. Si es un producto del catálogo copia su
+     * nombre, precio y receta de inventario (SNAPSHOT): así, si mañana cambia
+     * el precio o la receta, este pedido conserva lo que valía al venderse.
+     * Si es un ítem manual usa el nombre y precio escritos por el operador.
+     */
     private PedidoDetalle buildDetalle(Pedido pedido, DetalleItemRequest req) {
         PedidoDetalle detalle = new PedidoDetalle();
         detalle.setPedido(pedido);
@@ -604,6 +693,7 @@ public class PedidoServiceImpl implements IPedidoService {
         return detalle;
     }
 
+    /** Convierte la receta del producto (insumo + cantidad) a JSON para guardarla como snapshot en el detalle. */
     private String serializarComposicion(List<ProductoComposicionInventario> composicion) {
         try {
             List<Map<String, Object>> list = composicion.stream()
@@ -664,12 +754,18 @@ public class PedidoServiceImpl implements IPedidoService {
         }
     }
 
+    /**
+     * Deja el estado del pedido coherente con lo pagado:
+     * nada pagado -> PENDIENTE, pago parcial -> ABONADO_PARCIAL, pago completo -> PAGADO.
+     * No toca pedidos FIADO/FINALIZADO/ANULADO.
+     */
     private void recalcularEstadoPago(Pedido pedido) {
         if (!pedido.getEstado().permiteEdicion()) return;
         PedidoTotales t = calcularTotales(pedido);
         pedido.setEstado(EstadoPedido.calcular(t.totalCop(), t.totalAbonado()));
     }
 
+    /** Lanza error si el pedido ya no admite cambios (FIADO, FINALIZADO o ANULADO). */
     private void validarAbierto(Pedido pedido, String accion) {
         if (!pedido.getEstado().permiteEdicion()) {
             log.warn("[validarAbierto] pedidoId={} accion='{}' estado={}", pedido.getId(), accion, pedido.getEstado());
@@ -690,10 +786,12 @@ public class PedidoServiceImpl implements IPedidoService {
         }
     }
 
+    /** Calcula subtotal, total, abonado, saldo y vueltas en un solo lugar (ver PedidoTotales). */
     private PedidoTotales calcularTotales(Pedido pedido) {
         return PedidoTotales.of(pedido);
     }
 
+    /** Busca el pedido por id o lanza RecursoNoEncontradoException (el handler global lo convierte en HTTP 404). */
     private Pedido findOrThrow(Long id) {
         return pedidoRepo.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + id));

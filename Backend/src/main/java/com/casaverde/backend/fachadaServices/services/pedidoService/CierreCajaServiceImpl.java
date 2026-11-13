@@ -30,6 +30,12 @@ import com.casaverde.backend.capaAccesoADatos.repositories.UsuarioRepository;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * CIERRE DE CAJA diario: compara lo que el sistema dice que hay en cada fondo
+ * ("esperado") contra lo que el dueño cuenta físicamente ("contado") y guarda
+ * la diferencia. Reglas: un solo cierre por fecha; se bloquea si quedan pedidos
+ * activos ese día; al cerrar crea un backup automático de la base de datos.
+ */
 @Service
 @RequiredArgsConstructor
 public class CierreCajaServiceImpl implements ICierreCajaService {
@@ -60,6 +66,11 @@ public class CierreCajaServiceImpl implements ICierreCajaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("No hay cierre de caja para la fecha: " + fecha));
     }
 
+    /**
+     * Cierra la caja de una fecha: valida que no esté cerrada ni haya pedidos
+     * abiertos, calcula esperado vs contado por fondo (Efectivo, USD, NEQUI),
+     * genera backup y guarda el cierre con su diferencia.
+     */
     @Transactional
     public CierreCajaDTO cerrar(CierreCajaRequest request) {
         LocalDate fecha = request.getFecha() != null ? request.getFecha() : LocalDate.now(ZONA);

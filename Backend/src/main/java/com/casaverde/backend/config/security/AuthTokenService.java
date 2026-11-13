@@ -13,6 +13,14 @@ import org.springframework.stereotype.Service;
 
 import com.casaverde.backend.capaAccesoADatos.models.entitys.Usuario;
 
+/**
+ * Emite y valida los tokens de sesión (formato propio, parecido a un JWT).
+ * Token = base64(payload) + "." + firma, donde payload = "id:rol:expiración:nombre"
+ * y firma = HMAC-SHA256(payload, secreto). Si alguien altera el payload, la firma
+ * ya no coincide y el token se rechaza. Caduca a las 12 h (configurable).
+ * El secreto viene de la propiedad app.security.token-secret (en producción, de
+ * la variable de entorno APP_SECURITY_TOKEN_SECRET).
+ */
 @Service
 public class AuthTokenService {
 
@@ -24,6 +32,7 @@ public class AuthTokenService {
     @Value("${app.security.token-expiration-hours:12}")
     private long expirationHours;
 
+    /** Crea el token firmado para un usuario que acaba de iniciar sesión. */
     public String generar(Usuario usuario) {
         long expiraEn = Instant.now().plusSeconds(expirationHours * 3600).getEpochSecond();
         // Payload: id:rol:expiraEn:nombre  (split limit=4 para tolerar ":" en el nombre)
@@ -31,6 +40,7 @@ public class AuthTokenService {
         return encode(payload) + "." + firmar(payload);
     }
 
+    /** Devuelve el usuario si el token es auténtico y no ha vencido; null en cualquier otro caso. */
     public UsuarioAutenticado validar(String token) {
         try {
             return validarInterno(token);

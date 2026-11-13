@@ -14,6 +14,12 @@ Sistema de escritorio para la operación diaria de un asadero/restaurante: toma 
 
 ---
 
+## Equipo
+
+Jhon Rivera · Carlos Caicedo · Yonatan Buitron · Lenny Chilito — aportes de cada uno en [docs/APORTES_DEL_EQUIPO.md](docs/APORTES_DEL_EQUIPO.md).
+
+---
+
 ## Tabla de contenido
 
 1. [Tecnologías](#tecnologías)
@@ -99,11 +105,21 @@ Se necesitan **dos terminales**: una para el backend y otra para el frontend.
 ### 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/Harold-V/Casa-Verde.git
-cd Casa-Verde
+git clone https://github.com/jhonrivera0111-creator/proyecto-restaurante.git
+cd proyecto-restaurante
 ```
 
-### 2. Terminal 1 — Backend
+### 2. Terminal 1 — Frontend
+
+```bash
+cd Frontend
+npm install        # solo la primera vez
+npm run dev
+```
+
+Vite queda escuchando en <http://localhost:5173>. Todavía no inicies sesión: falta el backend.
+
+### 3. Terminal 2 (otra terminal aparte) — Backend
 
 ```bash
 cd Backend
@@ -114,6 +130,7 @@ mvnw.cmd spring-boot:run
 # Linux / macOS / Git Bash
 ./mvnw spring-boot:run
 ```
+
 
 La primera vez descarga Maven y las dependencias (varios minutos). Está listo cuando la consola muestra:
 
@@ -127,17 +144,9 @@ Al arrancar por primera vez el backend:
 
 Verificación rápida: abrir <http://localhost:5020/actuator/health> → debe responder `{"status":"UP"}`.
 
-### 3. Terminal 2 — Frontend
+Cuando el backend responda, abrir **<http://localhost:5173>** en el navegador.
 
-```bash
-cd Frontend
-npm install        # solo la primera vez
-npm run dev
-```
-
-Abrir **<http://localhost:5173>** en el navegador.
-
-> Vite redirige las llamadas `/api/...` al backend en `localhost:5020`, así que el backend debe estar corriendo antes de usar la app.
+> Vite redirige las llamadas `/api/...` al backend en `localhost:5020`; por eso hay que esperar a que el backend termine de arrancar antes de iniciar sesión.
 
 ### 4. Iniciar sesión
 
@@ -174,6 +183,7 @@ Los datos se guardan en volúmenes de Docker (`casaverde_db`, `casaverde_backups
 
 Recorrido de ~10 minutos que ejercita el flujo principal (pedido → cobro → caja → inventario → cierre):
 
+0. **Poner precios (obligatorio la primera vez).** El catálogo inicial se crea con **precio $0** a propósito (cada negocio define los suyos), y un pedido de $0 no se puede cobrar ni finalizar. En *Configuración → Productos* hacer clic sobre el precio ($0) de **"1/2 Gallina"** y de **"Gaseosa"** y asignar, por ejemplo, 28.000 y 4.000.
 1. **Cargar inventario.** *Inventario → Proveedores → Nuevo proveedor*. Luego *Inventario → Compras → Registrar compra*: comprar, por ejemplo, 5 gallinas y 5 cuyes. El stock sube en la pestaña *Stock*.
 2. **Crear un pedido.** *Pedidos → Nuevo Pedido*: agregar "1/2 Gallina" y "Gaseosa". El total lo calcula el backend.
 3. **Cobrar.** Abrir el pedido → *Cobrar*: registrar un pago parcial en COP y el resto en NEQUI. El estado pasa de `PENDIENTE` → `ABONADO_PARCIAL` → `PAGADO`.
@@ -198,7 +208,7 @@ mvnw.cmd test        # Windows
 ./mvnw test          # Linux / macOS / Git Bash
 ```
 
-Resultado esperado: `Tests run: 99, Failures: 0, Errors: 0`. Las pruebas usan el perfil `test` con una base de datos SQLite temporal en `Backend/target/test-data/`; no tocan los datos de desarrollo. Cubren:
+Resultado esperado: `Tests run: 118, Failures: 0, Errors: 0`. Las pruebas usan el perfil `test` con una base de datos SQLite temporal en `Backend/target/test-data/`; no tocan los datos de desarrollo. Cubren:
 
 | Clase de prueba | Qué valida |
 |---|---|
@@ -210,6 +220,10 @@ Resultado esperado: `Tests run: 99, Failures: 0, Errors: 0`. Las pruebas usan el
 | `EmpleadoServiceTest` | Adelantos, días trabajados y liquidaciones |
 | `CrearPedidoRequestValidationTest` | Validación de datos de entrada |
 | `CasaVerdeApplicationTests` | Que el contexto de Spring arranca |
+| `ArquitecturaCapasTest` | Contrato de arquitectura (ArchUnit): reglas de dependencia entre capas |
+| `SeguridadEndpointsTest` | Con la seguridad activada: sin token / token falso, alterado o vencido → 401; OPERADOR en rutas de ADMIN → 403; login y rutas públicas |
+
+Para correr una sola clase: `mvnw.cmd test -Dtest=ArquitecturaCapasTest` (o `./mvnw ...`).
 
 Reporte detallado: `Backend/target/surefire-reports/`.
 
@@ -231,6 +245,12 @@ Resultado esperado: `Test Files 7 passed`, `Tests 118 passed`. Cubren utilidades
 | Documento | Contenido |
 |---|---|
 | [docs/arquitectura.md](docs/arquitectura.md) | Arquitectura, capas, modelo de datos y reglas de negocio |
+| [docs/MANUAL_BUENAS_PRACTICAS.md](docs/MANUAL_BUENAS_PRACTICAS.md) | Convenciones, cómo agregar un módulo y definición de terminado |
+| [docs/INFORME_PRUEBAS.md](docs/INFORME_PRUEBAS.md) | Informe de pruebas para stakeholders |
+| [docs/REGISTRO_DE_CAMBIOS.md](docs/REGISTRO_DE_CAMBIOS.md) | Cambios de la etapa de validación final |
+| [docs/EXPLICACION_DEL_CODIGO.md](docs/EXPLICACION_DEL_CODIGO.md) | Mapa del código: qué hace cada carpeta y archivo, y cómo viaja una operación |
+| [docs/SUSTENTACION_PRINCIPAL.md](docs/SUSTENTACION_PRINCIPAL.md) | Resumen para la sustentación: decisiones de diseño y su justificación |
+| [docs/GUIA_PRESENTACION.md](docs/GUIA_PRESENTACION.md) | Guion de la presentación y de la demostración de pruebas en vivo |
 | [CLAUDE.md](CLAUDE.md) | Referencia técnica completa: contrato de todos los endpoints REST, entidades, convenciones de código y flujo Git |
 | Swagger UI (con el backend corriendo) | <http://localhost:5020/swagger-ui.html> — documentación interactiva de la API |
 | OpenAPI JSON | <http://localhost:5020/v3/api-docs> |
@@ -243,6 +263,9 @@ Resultado esperado: `Test Files 7 passed`, `Tests 118 passed`. Cubren utilidades
 |---|---|
 | `npm error enoent Could not read package.json` | `npm` se ejecutó fuera de `Frontend/`. Hacer `cd Frontend` primero. El backend **no** usa npm. |
 | `'mvn' no se reconoce como comando` | Usar el wrapper incluido: `mvnw.cmd` (Windows) o `./mvnw`. |
+| `"C:\Users\Nombre" no se reconoce como un comando...` / `Cannot start maven from wrapper` | Ocurría con el wrapper 3.3.2 original cuando la carpeta del usuario de Windows tiene espacios; **ya está corregido** en `Backend/mvnw.cmd` de este repositorio. Si se usa una copia antigua, actualizar el repo (`git pull`) o usar `./mvnw` desde Git Bash. |
+| El pedido queda en `PENDIENTE` aunque se pague / no deja finalizar | Los productos tienen precio $0. Asignar precios en *Configuración → Productos* (ver paso 0 del recorrido guiado). |
+| `./mvnw: Permission denied` (Linux / macOS) | `chmod +x Backend/mvnw` (en el repo ya tiene permiso de ejecución). |
 | `Port 5020 was already in use` / `Port 5173 is already in use` | Otra instancia sigue corriendo (o el contenedor Docker). Cerrarla o `docker compose down`. |
 | La app abre pero muestra "Error de conexión" o no lista usuarios | El backend no está corriendo o aún no termina de arrancar. |
 | `invalid target release: 17` | La variable `JAVA_HOME` apunta a una versión de Java distinta de la 17. |
